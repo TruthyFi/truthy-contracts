@@ -15,6 +15,11 @@ contract TruthyMarket is IBinaryOutcomeMarket, Ownable {
     address private _resolver;
     bool private _isResolved;
 
+    modifier onlyResolver() {
+        require(_msgSender() == _resolver, "Only the resolver can call this function");
+        _;
+    }
+
     constructor(
         address __owner,
         address __resolver,
@@ -79,7 +84,7 @@ contract TruthyMarket is IBinaryOutcomeMarket, Ownable {
 
     function redeemOutcome(uint256 idx, uint256 amount) external {}
 
-    function resolve(uint256 idx) external {}
+    function resolve(uint256 idx) external onlyResolver {}
 
     /// @notice Update the outcome token balances of this contract to match updated prices on Polymarket
     /// @dev inputs should be determined by `newBalance[i] = totalMarketLiquidity * outcomePrice[i]`,
