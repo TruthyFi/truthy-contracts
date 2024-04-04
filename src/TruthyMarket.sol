@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
-import {Context} from "@openzeppelin/contracts/utils/Context.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {UD60x18, ud} from "prb-math/src/UD60x18.sol";
 import {OutcomeToken} from "./OutcomeToken.sol";
@@ -82,8 +81,28 @@ contract TruthyMarket is IBinaryOutcomeMarket, Ownable {
 
     function resolve(uint256 idx) external {}
 
+    /// @notice Update the outcome token balances of this contract to match updated prices on Polymarket
+    /// @dev inputs should be determined by `newBalance[i] = totalMarketLiquidity * outcomePrice[i]`,
+    ///      where `0 < outcomePrice[i] < 1 && outcomePrice[0] + outcomePrice[1] == 1`
+    /// @param newBalances The new balances of the outcome tokens
+    function updatePolymarketBalances(uint256[2] memory newBalances) external onlyOwner {
+        uint256[2] memory balancesThis = _getOutcomeBalances();
+        for (uint256 i; i < 2; ++i) {
+            if (newBalances[i] > balancesThis[i]) {
+                _outcomes[i].mint(address(this), newBalances[i] - balancesThis[i]);
+            } else if (newBalances[i] < balancesThis[i]) {
+                _outcomes[i].burn(address(this), balancesThis[i] - newBalances[i]);
+            }
+        }
+    }
+
     function _getTotalSupplies() private view returns (UD60x18[2] memory supplies) {
         supplies[0] = ud(_outcomes[0].totalSupply());
         supplies[1] = ud(_outcomes[1].totalSupply());
+    }
+
+    function _getOutcomeBalances() private view returns (uint256[2] memory balances) {
+        balances[0] = _outcomes[0].balanceOf(address(this));
+        balances[1] = _outcomes[1].balanceOf(address(this));
     }
 }
