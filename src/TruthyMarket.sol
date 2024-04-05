@@ -96,9 +96,31 @@ contract TruthyMarket is IBinaryOutcomeMarket, Ownable {
         return _outcomes[0].totalSupply() + _outcomes[1].totalSupply();
     }
 
-    function buyOutcome(uint256 idx) external payable notResolved validIndex(idx) {}
+    function buyOutcome(uint256 idx) external payable notResolved validIndex(idx) returns (uint256 bought) {
+        // TODO: Implement buying outcome tokens for $DEGEN
+        // Determine amount of tokens to mint based on amount of $DEGEN sent (msg.value)
+        // Probably need to account for price impact of minting given amount of tokens
+    }
 
-    function redeemOutcome(uint256 idx, uint256 amount) external validIndex(idx) {}
+    function redeemOutcome(uint256 idx, uint256 amount) external validIndex(idx) returns (uint256 value) {
+        address payable sender = payable(_msgSender());
+        require(_outcomes[idx].balanceOf(sender) >= amount, "Insufficient balance");
+        if (_isResolved) {
+            if (_resolvedTo == (idx == 0)) {
+                // Redeem winning outcome 1:1 for $DEGEN
+                // TODO: Make sure 1:1 is the correct exchange rate after resolution
+                // Alternative: Use user's share of total winning supply to send $DEGEN proportionally
+                value = amount;
+            } else {
+                value = 0;
+            }
+        } else {
+            // TODO: Redeem outcome tokens for $DEGEN based on current market prices
+            // Probably need to account for price impact of burning given amount of tokens
+        }
+        _outcomes[idx].burn(sender, amount);
+        sender.sendValue(value);
+    }
 
     function resolve(uint256 idx) external onlyResolver notResolved validIndex(idx) {
         // Store resolution status
