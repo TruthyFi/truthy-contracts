@@ -2,12 +2,17 @@
 pragma solidity ^0.8.20;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {UD60x18, ud} from "prb-math/src/UD60x18.sol";
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {OutcomeToken} from "./OutcomeToken.sol";
 import {IOutcomeToken} from "./interfaces/IOutcomeToken.sol";
 import {IBinaryOutcomeMarket} from "./interfaces/IBinaryOutcome.sol";
 
 contract TruthyMarket is IBinaryOutcomeMarket, Ownable {
+    using Address for address payable;
+    using Math for uint256;
+
+    uint256 private constant PRECISION = 1e18;
     string private _id;
     string private _name;
     string private _description;
@@ -49,9 +54,8 @@ contract TruthyMarket is IBinaryOutcomeMarket, Ownable {
         _outcomes[0] = new OutcomeToken(string(abi.encodePacked(_name, " YES")), "YES");
         _outcomes[1] = new OutcomeToken(string(abi.encodePacked(_name, " NO")), "NO");
         // Mint initial liquidity based on Polymarket:
-        UD60x18 initialLiquidity = ud(__initialLiquidity);
-        _outcomes[0].mint(address(this), initialLiquidity.mul(ud(__initialPrices[0])).intoUint256());
-        _outcomes[1].mint(address(this), initialLiquidity.mul(ud(__initialPrices[1])).intoUint256());
+        _outcomes[0].mint(address(this), __initialLiquidity.mulDiv(__initialPrices[0], PRECISION));
+        _outcomes[1].mint(address(this), __initialLiquidity.mulDiv(__initialPrices[1], PRECISION));
     }
 
     function id() external view returns (string memory) {
@@ -80,8 +84,8 @@ contract TruthyMarket is IBinaryOutcomeMarket, Ownable {
 
     function getOutcomePrice(uint256 idx) external view validIndex(idx) returns (uint256) {
         if (_isResolved) return _resolvedTo == (idx == 0) ? 1e18 : 0;
-        UD60x18[2] memory outcomeTotals = _getTotalSupplies();
-        return outcomeTotals[idx].div(outcomeTotals[0] + outcomeTotals[1]).intoUint256();
+        uint256[2] memory outcomeTotals = _getTotalSupplies();
+        return outcomeTotals[idx].mulDiv(PRECISION, outcomeTotals[0] + outcomeTotals[1]);
     }
 
     function getOutcomeLiquidity(uint256 idx) external view validIndex(idx) returns (uint256) {
@@ -124,9 +128,9 @@ contract TruthyMarket is IBinaryOutcomeMarket, Ownable {
         }
     }
 
-    function _getTotalSupplies() private view returns (UD60x18[2] memory supplies) {
-        supplies[0] = ud(_outcomes[0].totalSupply());
-        supplies[1] = ud(_outcomes[1].totalSupply());
+    function _getTotalSupplies() private view returns (uint256[2] memory supplies) {
+        supplies[0] = _outcomes[0].totalSupply();
+        supplies[1] = _outcomes[1].totalSupply();
     }
 
     function _getOutcomeBalances() private view returns (uint256[2] memory balances) {
