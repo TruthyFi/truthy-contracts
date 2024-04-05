@@ -83,9 +83,9 @@ contract TruthyMarket is IBinaryOutcomeMarket, Ownable {
     }
 
     function getOutcomePrice(uint256 idx) external view validIndex(idx) returns (uint256) {
+        // TODO: Make sure 1:1 is the correct exchange rate after resolution
         if (_isResolved) return _resolvedTo == (idx == 0) ? 1e18 : 0;
-        uint256[2] memory outcomeTotals = _getTotalSupplies();
-        return outcomeTotals[idx].mulDiv(PRECISION, outcomeTotals[0] + outcomeTotals[1]);
+        return _getOutcomePrice(idx, _getTotalSupplies());
     }
 
     function getOutcomeLiquidity(uint256 idx) external view validIndex(idx) returns (uint256) {
@@ -96,10 +96,16 @@ contract TruthyMarket is IBinaryOutcomeMarket, Ownable {
         return _outcomes[0].totalSupply() + _outcomes[1].totalSupply();
     }
 
-    function buyOutcome(uint256 idx) external payable notResolved validIndex(idx) returns (uint256 bought) {
-        // TODO: Implement buying outcome tokens for $DEGEN
-        // Determine amount of tokens to mint based on amount of $DEGEN sent (msg.value)
-        // Probably need to account for price impact of minting given amount of tokens
+    function buyOutcome(uint256 idx, uint256 amount) external payable notResolved validIndex(idx) returns (uint256) {
+        address payable sender = payable(_msgSender());
+        uint256 received = msg.value;
+        uint256 cost = _getCostToMint(idx, amount, _getTotalSupplies());
+        require(received >= cost, "Insufficient payment");
+        _outcomes[idx].mint(sender, amount);
+        if (received > cost) {
+            sender.sendValue(received - cost);
+        }
+        return cost;
     }
 
     function redeemOutcome(uint256 idx, uint256 amount) external validIndex(idx) returns (uint256 value) {
@@ -115,8 +121,7 @@ contract TruthyMarket is IBinaryOutcomeMarket, Ownable {
                 value = 0;
             }
         } else {
-            // TODO: Redeem outcome tokens for $DEGEN based on current market prices
-            // Probably need to account for price impact of burning given amount of tokens
+            value = _getProceedsFromBurn(idx, amount, _getTotalSupplies());
         }
         _outcomes[idx].burn(sender, amount);
         sender.sendValue(value);
@@ -148,6 +153,58 @@ contract TruthyMarket is IBinaryOutcomeMarket, Ownable {
                 _outcomes[i].burn(address(this), balancesThis[i] - newBalances[i]);
             }
         }
+    }
+
+    function _getOutcomePrice(uint256 idx, uint256[2] memory outcomeTotals) private pure returns (uint256) {
+        return outcomeTotals[idx].mulDiv(PRECISION, outcomeTotals[0] + outcomeTotals[1]);
+    }
+
+    function _getOutcomePriceAfterMint(uint256 idx, uint256 amount, uint256[2] memory outcomeTotals)
+        private
+        pure
+        returns (uint256)
+    {
+        return (outcomeTotals[idx] + amount).mulDiv(PRECISION, outcomeTotals[0] + outcomeTotals[1] + amount);
+    }
+
+    function _getOutcomePriceAfterBurn(uint256 idx, uint256 amount, uint256[2] memory outcomeTotals)
+        private
+        pure
+        returns (uint256)
+    {
+        return (outcomeTotals[idx] - amount).mulDiv(PRECISION, outcomeTotals[0] + outcomeTotals[1] - amount);
+    }
+
+    function _getAveragePriceToMint(uint256 idx, uint256 amount, uint256[2] memory outcomeTotals)
+        private
+        pure
+        returns (uint256)
+    {
+        return Math.average(_getOutcomePrice(idx, outcomeTotals), _getOutcomePriceAfterMint(idx, amount, outcomeTotals));
+    }
+
+    function _getAveragePriceToBurn(uint256 idx, uint256 amount, uint256[2] memory outcomeTotals)
+        private
+        pure
+        returns (uint256)
+    {
+        return Math.average(_getOutcomePrice(idx, outcomeTotals), _getOutcomePriceAfterBurn(idx, amount, outcomeTotals));
+    }
+
+    function _getCostToMint(uint256 idx, uint256 amount, uint256[2] memory outcomeTotals)
+        private
+        pure
+        returns (uint256)
+    {
+        return amount.mulDiv(_getAveragePriceToMint(idx, amount, outcomeTotals), PRECISION);
+    }
+
+    function _getProceedsFromBurn(uint256 idx, uint256 amount, uint256[2] memory outcomeTotals)
+        private
+        pure
+        returns (uint256)
+    {
+        return amount.mulDiv(_getAveragePriceToBurn(idx, amount, outcomeTotals), PRECISION);
     }
 
     function _getTotalSupplies() private view returns (uint256[2] memory supplies) {

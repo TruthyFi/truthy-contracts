@@ -22,7 +22,7 @@ interface IBinaryOutcomeMarket {
 
     function getTotalLiquidity() external view returns (uint256);
 
-    function buyOutcome(uint256 idx) external payable returns (uint256);
+    function buyOutcome(uint256 idx, uint256 amount) external payable returns (uint256);
 
     function redeemOutcome(uint256 idx, uint256 amount) external returns (uint256);
 
