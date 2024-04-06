@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 import {IOutcomeToken} from "./IOutcomeToken.sol";
 
 interface IBinaryOutcomeMarket {
-    function id() external view returns (string memory);
+    function id() external view returns (bytes32);
 
     function name() external view returns (string memory);
 

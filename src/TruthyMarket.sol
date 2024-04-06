@@ -13,7 +13,7 @@ contract TruthyMarket is IBinaryOutcomeMarket, Ownable {
     using Math for uint256;
 
     uint256 private constant PRECISION = 1e18;
-    string private _id;
+    bytes32 _id;
     string private _name;
     string private _description;
     OutcomeToken[2] private _outcomes;
@@ -39,7 +39,7 @@ contract TruthyMarket is IBinaryOutcomeMarket, Ownable {
     constructor(
         address __owner,
         address __resolver,
-        string memory __id,
+        bytes32 __id,
         string memory __name,
         string memory __description,
         uint256[2] memory __initialPrices,
@@ -58,7 +58,7 @@ contract TruthyMarket is IBinaryOutcomeMarket, Ownable {
         _outcomes[1].mint(address(this), __initialLiquidity.mulDiv(__initialPrices[1], PRECISION));
     }
 
-    function id() external view returns (string memory) {
+    function id() external view returns (bytes32) {
         return _id;
     }
 
