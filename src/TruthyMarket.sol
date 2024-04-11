@@ -96,6 +96,14 @@ contract TruthyMarket is IBinaryOutcomeMarket, Ownable {
         return _outcomes[0].totalSupply() + _outcomes[1].totalSupply();
     }
 
+    function previewCostToBuy(uint256 idx, uint256 amount) external view validIndex(idx) returns (uint256) {
+        return _getCostToMint(idx, amount, _getTotalSupplies());
+    }
+
+    function previewProceedsFromSell(uint256 idx, uint256 amount) external view validIndex(idx) returns (uint256) {
+        return _getProceedsFromBurn(idx, amount, _getTotalSupplies());
+    }
+
     function buyOutcome(uint256 idx, uint256 amount) external payable notResolved validIndex(idx) returns (uint256) {
         address payable sender = payable(_msgSender());
         uint256 received = msg.value;
