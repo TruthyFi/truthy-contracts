@@ -1,0 +1,205 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+env:
+  FOUNDRY_PROFILE: ci
+
+jobs:
+  check:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Check formatting
+        run: forge fmt --check
+
+      - name: Run forge build
+        run: |
+          forge --version
+          forge build --sizes
+
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Run unit tests
+        run: forge test --match-path "tests/unit/**" -vvv
+
+      - name: Run integration tests
+        run: forge test --match-path "tests/integration/**" -vvv
+
+      - name: Run fuzz tests
+        run: forge test --match-path "tests/fuzz/**" --fuzz-runs 1000 -vvv
+
+  coverage:
+    name: Test Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Run coverage
+        run: forge coverage --report summary
+
+      - name: Generate LCOV report
+        run: forge coverage --report lcov
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./lcov.info
+          fail_ci_if_error: false
+
+  gas-report:
+    name: Gas Report
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Generate gas report
+        run: forge test --gas-report > gas-report.txt
+
+      - name: Upload gas report
+        uses: actions/upload-artifact@v3
+        with:
+          name: gas-report
+          path: gas-report.txt
+
+  security:
+    name: Security Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Install Slither
+        run: |
+          pip3 install slither-analyzer
+          pip3 install solc-select
+          solc-select install 0.8.20
+          solc-select use 0.8.20
+
+      - name: Run Slither
+        run: slither . --foundry-out-directory out --exclude-dependencies || true
+        continue-on-error: true
+
+  snapshot:
+    name: Gas Snapshot
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Generate gas snapshot
+        run: forge snapshot --check
+
+      - name: Upload snapshot
+        uses: actions/upload-artifact@v3
+        with:
+          name: gas-snapshot
+          path: .gas-snapshot
+
+  deploy-testnet:
+    name: Deploy to Base Sepolia
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+    needs: [test, coverage, gas-report]
+    environment: testnet
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Deploy to Base Sepolia
+        env:
+          PRIVATE_KEY: ${{ secrets.TESTNET_PRIVATE_KEY }}
+          BASESCAN_API_KEY: ${{ secrets.BASESCAN_API_KEY }}
+        run: |
+          forge script script/Deploy.s.sol:DeployScript \
+            --rpc-url https://sepolia.base.org \
+            --broadcast \
+            --verify \
+            -vvvv
+
+      - name: Verify deployment
+        env:
+          FACTORY_ADDRESS: ${{ secrets.FACTORY_ADDRESS }}
+          USDC_ADDRESS: ${{ secrets.USDC_ADDRESS }}
+        run: |
+          forge script script/VerifyDeployment.s.sol:VerifyDeployment \
+            --rpc-url https://sepolia.base.org
+
+  deploy-mainnet:
+    name: Deploy to Base Mainnet
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
+    needs: [test, coverage, gas-report, security]
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Deploy to Base Mainnet
+        env:
+          PRIVATE_KEY: ${{ secrets.MAINNET_PRIVATE_KEY }}
+          BASESCAN_API_KEY: ${{ secrets.BASESCAN_API_KEY }}
+        run: |
+          forge script script/Deploy.s.sol:DeployScript \
+            --rpc-url https://mainnet.base.org \
+            --broadcast \
+            --verify \
+            --slow \
+            -vvvv
+
+      - name: Verify deployment
+        env:
+          FACTORY_ADDRESS: ${{ secrets.FACTORY_ADDRESS_MAINNET }}
+          USDC_ADDRESS: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+        run: |
+          forge script script/VerifyDeployment.s.sol:VerifyDeployment \
+            --rpc-url https://mainnet.base.org
