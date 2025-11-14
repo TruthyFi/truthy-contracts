@@ -1,0 +1,267 @@
+// TruthyMarketFactory ABI (essential functions only)
+export const FACTORY_ABI = [
+  {
+    inputs: [
+      { name: 'id', type: 'bytes32' },
+      { name: 'name', type: 'string' },
+      { name: 'description', type: 'string' },
+      { name: 'category', type: 'string' },
+      { name: 'sourceUrl', type: 'string' },
+      { name: 'resolver', type: 'address' },
+      { name: 'expiresAt', type: 'uint256' },
+      { name: 'initialPrices', type: 'uint256[2]' },
+      { name: 'initialLiquidity', type: 'uint256' },
+    ],
+    name: 'createMarket',
+    outputs: [{ name: 'market', type: 'address' }],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [{ name: 'id', type: 'bytes32' }],
+    name: 'getMarket',
+    outputs: [{ type: 'address' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'getAllMarkets',
+    outputs: [{ type: 'address[]' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [{ name: 'creator', type: 'address' }],
+    name: 'getMarketsByCreator',
+    outputs: [{ type: 'bytes32[]' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [{ name: 'category', type: 'string' }],
+    name: 'getMarketsByCategory',
+    outputs: [{ type: 'bytes32[]' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'getTotalMarkets',
+    outputs: [{ type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'paymentToken',
+    outputs: [{ type: 'address' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'creationFee',
+    outputs: [{ type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+] as const;
+
+// TruthyMarket ABI (essential functions only)
+export const MARKET_ABI = [
+  {
+    inputs: [],
+    name: 'id',
+    outputs: [{ type: 'bytes32' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'name',
+    outputs: [{ type: 'string' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'description',
+    outputs: [{ type: 'string' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'category',
+    outputs: [{ type: 'string' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'sourceUrl',
+    outputs: [{ type: 'string' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'creator',
+    outputs: [{ type: 'address' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'expiresAt',
+    outputs: [{ type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'isResolved',
+    outputs: [{ type: 'bool' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [{ name: 'idx', type: 'uint256' }],
+    name: 'getOutcomeToken',
+    outputs: [{ type: 'address' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [{ name: 'idx', type: 'uint256' }],
+    name: 'getOutcomePrice',
+    outputs: [{ type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [{ name: 'idx', type: 'uint256' }],
+    name: 'getOutcomeLiquidity',
+    outputs: [{ type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'getTotalLiquidity',
+    outputs: [{ type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { name: 'idx', type: 'uint256' },
+      { name: 'amount', type: 'uint256' },
+    ],
+    name: 'previewCostToBuy',
+    outputs: [{ type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { name: 'idx', type: 'uint256' },
+      { name: 'amount', type: 'uint256' },
+    ],
+    name: 'buyOutcome',
+    outputs: [
+      { name: 'cost', type: 'uint256' },
+      { name: 'fee', type: 'uint256' },
+    ],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { name: 'idx', type: 'uint256' },
+      { name: 'amount', type: 'uint256' },
+    ],
+    name: 'redeemOutcome',
+    outputs: [
+      { name: 'proceeds', type: 'uint256' },
+      { name: 'fee', type: 'uint256' },
+    ],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'totalVolume',
+    outputs: [{ type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [{ name: 'user', type: 'address' }],
+    name: 'userVolume',
+    outputs: [{ type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'minBet',
+    outputs: [{ type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'maxBet',
+    outputs: [{ type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+] as const;
+
+// ERC20 ABI (for USDC)
+export const ERC20_ABI = [
+  {
+    inputs: [{ name: 'owner', type: 'address' }],
+    name: 'balanceOf',
+    outputs: [{ type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { name: 'spender', type: 'address' },
+      { name: 'amount', type: 'uint256' },
+    ],
+    name: 'approve',
+    outputs: [{ type: 'bool' }],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { name: 'owner', type: 'address' },
+      { name: 'spender', type: 'address' },
+    ],
+    name: 'allowance',
+    outputs: [{ type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'decimals',
+    outputs: [{ type: 'uint8' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  // Faucet function for MockUSDC (testnet only)
+  {
+    inputs: [],
+    name: 'faucet',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+] as const;
