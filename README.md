@@ -15,6 +15,7 @@ TruthyFi combines the engagement of Twitter/Farcaster with the accountability of
 
 ## 📋 Table of Contents
 
+- [Quick Start - Local Testing](#-quick-start---local-testing)
 - [Architecture](#architecture)
 - [Smart Contracts](#smart-contracts)
 - [Getting Started](#getting-started)
@@ -23,6 +24,42 @@ TruthyFi combines the engagement of Twitter/Farcaster with the accountability of
 - [Frontend](#frontend)
 - [Grant Applications](#grant-applications)
 - [Roadmap](#roadmap)
+
+## ⚡ Quick Start - Local Testing
+
+**Run TruthyFi locally in 5 minutes:**
+
+```bash
+# 1. One-command setup (automated)
+bash scripts/local-test.sh
+
+# 2. Start frontend (in new terminal)
+cd frontend
+npm run dev
+
+# 3. Open http://localhost:3000 and connect MetaMask!
+```
+
+**What you get:**
+- ✅ Local blockchain running (Anvil)
+- ✅ All contracts deployed
+- ✅ 5 demo markets created
+- ✅ Test USDC funded
+- ✅ Frontend configured
+- ✅ Ready to trade!
+
+**📚 Detailed Guides:**
+- [LOCAL_TESTING_GUIDE.md](./LOCAL_TESTING_GUIDE.md) - Complete local testing guide
+- [scripts/README.md](./scripts/README.md) - Automation scripts documentation
+- [DEPLOYMENT_RUNBOOK.md](./DEPLOYMENT_RUNBOOK.md) - Production deployment
+
+**🎬 Quick Demo:**
+```bash
+# After setup, run an automated demo
+bash scripts/demo.sh
+```
+
+This shows a complete trade flow: getting USDC, buying tokens, selling tokens, and viewing results.
 
 ## 🏗 Architecture
 
